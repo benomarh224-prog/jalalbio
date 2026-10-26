@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.vercel/
+.DS_Store
