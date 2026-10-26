@@ -41,8 +41,11 @@ export function ProductsManager() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const { data: productsData, isLoading } = useQuery<{ products: Product[] }>({
-    queryKey: ['products'],
+  const { data: productsData, isLoading } = useQuery<{
+    products: Product[]
+    databaseConnected: boolean
+  }>({
+    queryKey: ['admin', 'products'],
     queryFn: async () => {
       const r = await fetch('/api/products')
       if (!r.ok) throw new Error('فشل في تحميل المنتجات')
@@ -51,7 +54,7 @@ export function ProductsManager() {
   })
 
   const { data: categoriesData } = useQuery<{ categories: CategoryWithCount[] }>({
-    queryKey: ['categories'],
+    queryKey: ['admin', 'categories'],
     queryFn: async () => {
       const r = await fetch('/api/categories')
       if (!r.ok) throw new Error('فشل في تحميل الأصناف')
@@ -60,6 +63,7 @@ export function ProductsManager() {
   })
 
   const products = productsData?.products ?? []
+  const databaseConnected = productsData?.databaseConnected ?? false
   const categories = categoriesData?.categories ?? []
 
   const filtered = useMemo(() => {
@@ -85,8 +89,10 @@ export function ProductsManager() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'products'] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.invalidateQueries({ queryKey: ['categories'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'categories'] })
       toast({
         title: 'تم الحذف',
         description: 'تم حذف المنتج بنجاح',
@@ -113,6 +119,11 @@ export function ProductsManager() {
 
   return (
     <div className="space-y-5">
+      {!isLoading && !databaseConnected && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          المنتجات المعروضة من الكتالوج الثابت. ربط قاعدة البيانات مطلوب لإضافة المنتجات أو تعديلها أو حذفها.
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -131,7 +142,7 @@ export function ProductsManager() {
               className="pr-9"
             />
           </div>
-          <Button onClick={openCreate} className="gap-2 shrink-0">
+          <Button onClick={openCreate} disabled={!databaseConnected} className="gap-2 shrink-0">
             <Plus className="size-4" />
             <span className="hidden sm:inline">إضافة منتج</span>
             <span className="sm:hidden">إضافة</span>
@@ -245,6 +256,7 @@ export function ProductsManager() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openEdit(p)}
+                          disabled={!databaseConnected}
                           aria-label="تعديل"
                         >
                           <Pencil className="size-4" />
@@ -253,6 +265,7 @@ export function ProductsManager() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeleteId(p.id)}
+                          disabled={!databaseConnected}
                           aria-label="حذف"
                           className="text-destructive hover:bg-destructive/10"
                         >

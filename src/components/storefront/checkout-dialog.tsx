@@ -84,6 +84,12 @@ export function CheckoutDialog({
       })
 
       if (!res.ok) {
+        if (res.status === 503) {
+          toast.error('الطلبات غير متاحة حالياً', {
+            description: 'يرجى التواصل مع المتجر مباشرةً لإتمام الطلب.',
+          })
+          return
+        }
         throw new Error('فشل إرسال الطلب')
       }
 

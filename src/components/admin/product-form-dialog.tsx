@@ -158,7 +158,10 @@ export function ProductFormDialog({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'products'] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
+      qc.invalidateQueries({ queryKey: ['categories'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'categories'] })
       toast({
         title: isEdit ? 'تم التحديث' : 'تمت الإضافة',
         description: isEdit

@@ -85,7 +85,10 @@ export function OrdersManager() {
   const [detailId, setDetailId] = useState<string | null>(null)
 
   // Always fetch all orders to compute counts per status
-  const { data: allData } = useQuery<{ orders: Order[] }>({
+  const { data: allData } = useQuery<{
+    orders: Order[]
+    databaseConnected: boolean
+  }>({
     queryKey: ['orders', 'all'],
     queryFn: async () => {
       const r = await fetch('/api/orders')
@@ -95,7 +98,10 @@ export function OrdersManager() {
   })
 
   // Fetch filtered orders by selected tab
-  const { data, isLoading } = useQuery<{ orders: Order[] }>({
+  const { data, isLoading } = useQuery<{
+    orders: Order[]
+    databaseConnected: boolean
+  }>({
     queryKey: ['orders', tab],
     queryFn: async () => {
       const url =
@@ -153,6 +159,7 @@ export function OrdersManager() {
         (old) => {
           if (!old) return old
           return {
+            ...old,
             orders: old.orders.map((o) =>
               o.id === id ? { ...o, status } : o,
             ),
@@ -189,6 +196,11 @@ export function OrdersManager() {
 
   return (
     <div className="space-y-5">
+      {data?.databaseConnected === false && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          قاعدة البيانات غير متصلة. الطلبات غير متاحة حالياً.
+        </div>
+      )}
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">الطلبات</h1>

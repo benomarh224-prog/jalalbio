@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { catalogProducts } from '@/lib/catalog'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
         (!query || [product.name, product.nameAr, product.descriptionAr ?? '']
           .some((value) => value.toLocaleLowerCase().includes(query)))
       )
-      return NextResponse.json({ products })
+      return NextResponse.json({ products, databaseConnected: false })
     }
 
     const where: Record<string, unknown> = {}
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ products })
+    return NextResponse.json({ products, databaseConnected: true })
   } catch (error) {
     console.error('GET /api/products error:', error)
     return NextResponse.json(
@@ -48,6 +49,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ error: 'Database is not connected' }, { status: 503 })
+  }
+
   try {
     const body = await request.json()
     const {

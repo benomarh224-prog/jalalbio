@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ orders: [], databaseConnected: false })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -15,7 +22,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ orders })
+    return NextResponse.json({ orders, databaseConnected: true })
   } catch (error) {
     console.error('GET /api/orders error:', error)
     return NextResponse.json(
@@ -26,6 +33,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ error: 'Orders are unavailable' }, { status: 503 })
+  }
+
   try {
     const body = await request.json()
     const { customerName, phone, city, address, notes, items } = body

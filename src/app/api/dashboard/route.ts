@@ -1,7 +1,33 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAdmin } from '@/lib/admin-auth'
+import { catalogProducts } from '@/lib/catalog'
 
 export async function GET() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+
+  if (!process.env.DATABASE_URL) {
+    const dailyRevenue = Array.from({ length: 7 }, (_, index) => ({
+      date: new Date(Date.now() - (6 - index) * 86_400_000).toISOString().slice(0, 10),
+      revenue: 0,
+    }))
+    return NextResponse.json({
+      stats: {
+        totalRevenue: 0,
+        totalOrders: 0,
+        totalProducts: catalogProducts.length,
+        lowStock: catalogProducts.filter((product) => product.stock < 50).length,
+        pendingOrders: 0,
+        recentOrders: [],
+        topProducts: [],
+        revenueByStatus: [],
+        dailyRevenue,
+        databaseConnected: false,
+      },
+    })
+  }
+
   try {
     const [orders, products, pendingOrders, lowStockProducts] = await Promise.all([
       db.order.findMany({
@@ -79,6 +105,7 @@ export async function GET() {
       topProducts,
       revenueByStatus,
       dailyRevenue,
+      databaseConnected: true,
     }
 
     return NextResponse.json({ stats })

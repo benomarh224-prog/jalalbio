@@ -6,22 +6,23 @@
 
 ```bash
 bun install
+bun run db:generate
 bun run db:push
-bun run prisma/seed.ts
+bun run db:seed
 bun run dev
 ```
 
 ## لوحة التحكم
 
-افتح `/dashboard` للدخول إلى لوحة التحكم، ثم أدخل كلمة المرور: `admin123`
+افتح `/dashboard` للدخول إلى لوحة التحكم. تُضبط كلمة المرور في متغير البيئة `ADMIN_PASSWORD` على الخادم.
 
 ## التقنيات
 - Next.js 16 (App Router) + TypeScript
 - Tailwind CSS 4 + shadcn/ui
-- Prisma ORM (SQLite)
+- Prisma ORM (PostgreSQL)
 - React Query + Zustand
 - Recharts (لوحة التحكم)
 - z-ai-web-dev-sdk (توليد الصور)
 
 ## الوصول
-كلمة مرور الأدمن: admin123
+لا تضع كلمة مرور لوحة التحكم في ملفات المشروع أو في واجهة الدخول.

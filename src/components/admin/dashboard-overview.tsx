@@ -141,6 +141,11 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
+      {!stats.databaseConnected && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          كتالوج المنتجات ظاهر، لكن قاعدة البيانات غير متصلة. الطلبات والتعديلات غير متاحة حتى يتم ربطها.
+        </div>
+      )}
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">نظرة عامة</h1>

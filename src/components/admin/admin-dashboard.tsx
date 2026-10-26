@@ -22,16 +22,13 @@ import { OrdersManager } from './orders-manager'
 import { useToast } from '@/hooks/use-toast'
 import { useMounted } from '@/hooks/use-mounted'
 
-const AUTH_KEY = 'dar-tabiaa-admin-auth'
-const ADMIN_PASSWORD = 'admin123'
-
 /* --------------------------------- Login --------------------------------- */
 
 function LoginScreen({
   onLogin,
   onExit,
 }: {
-  onLogin: (password: string) => boolean
+  onLogin: (password: string) => Promise<boolean>
   onExit: () => void
 }) {
   const [password, setPassword] = useState('')
@@ -39,13 +36,12 @@ function LoginScreen({
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-    // Simulate brief async to give feedback
-    setTimeout(() => {
-      const ok = onLogin(password)
+    try {
+      const ok = await onLogin(password)
       if (!ok) {
         setError('كلمة المرور غير صحيحة')
         toast({
@@ -54,8 +50,9 @@ function LoginScreen({
           variant: 'destructive',
         })
       }
+    } finally {
       setLoading(false)
-    }, 200)
+    }
   }
 
   return (
@@ -95,9 +92,6 @@ function LoginScreen({
                 {error}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              كلمة المرور الافتراضية: <span dir="ltr">admin123</span>
-            </p>
           </div>
 
           <Button
@@ -231,36 +225,50 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ onExit }: AdminDashboardProps) {
   const mounted = useMounted()
   const [authed, setAuthed] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
   const [view, setView] = useState<AdminView>('overview')
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(AUTH_KEY)
-    if (stored === 'true') {
-      // Reading localStorage on mount and reflecting it in state is a
-      // legitimate synchronization pattern (the React docs warning is
-      // about cascading renders which doesn't apply here since we only
-      // run once on mount).
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAuthed(true)
-    }
+    let active = true
+    fetch('/api/admin/session', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((data) => {
+        if (active) setAuthed(data.authenticated === true)
+      })
+      .catch(() => {
+        if (active) setAuthed(false)
+      })
+      .finally(() => {
+        if (active) setCheckingSession(false)
+      })
+    return () => { active = false }
   }, [])
 
-  const login = (password: string) => {
-    if (password === ADMIN_PASSWORD) {
-      localStorage.setItem(AUTH_KEY, 'true')
+  const login = async (password: string) => {
+    try {
+      const response = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      if (!response.ok) return false
       setAuthed(true)
       return true
+    } catch {
+      return false
     }
-    return false
   }
 
-  const logout = () => {
-    localStorage.removeItem(AUTH_KEY)
-    setAuthed(false)
+  const logout = async () => {
+    try {
+      await fetch('/api/admin/session', { method: 'DELETE' })
+    } finally {
+      setAuthed(false)
+    }
   }
 
-  if (!mounted) {
+  if (!mounted || checkingSession) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Leaf className="size-8 animate-pulse text-primary" />

@@ -65,6 +65,7 @@ export type CartItem = {
 }
 
 export type DashboardStats = {
+  databaseConnected: boolean
   totalRevenue: number
   totalOrders: number
   totalProducts: number

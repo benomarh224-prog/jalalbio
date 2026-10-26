@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { ZipArchive } from 'archiver'
 import fs from 'fs'
 import path from 'path'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,6 +73,9 @@ function addPathToArchive(
 }
 
 export async function GET() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+
   try {
     const projectRoot = process.cwd()
 
@@ -87,9 +91,9 @@ export async function GET() {
       Buffer.from(
         [
           '# Environment variables',
-          'DATABASE_URL=file:/home/z/my-project/db/custom.db',
+          'DATABASE_URL=postgresql://user:password@host/database?sslmode=require',
           '',
-          '# Admin dashboard password is set in the app (default: admin123)',
+          'ADMIN_PASSWORD=replace-with-a-private-password',
         ].join('\n')
       ),
       { name: '.env.example' }
@@ -107,25 +111,26 @@ export async function GET() {
           '',
           '```bash',
           'bun install',
+          'bun run db:generate',
           'bun run db:push',
-          'bun run prisma/seed.ts',
+          'bun run db:seed',
           'bun run dev',
           '```',
           '',
           '## لوحة التحكم',
           '',
-          'افتح `/dashboard` للدخول إلى لوحة التحكم، ثم أدخل كلمة المرور: `admin123`',
+          'افتح `/dashboard` للدخول إلى لوحة التحكم. تُضبط كلمة المرور في متغير البيئة `ADMIN_PASSWORD` على الخادم.',
           '',
           '## التقنيات',
           '- Next.js 16 (App Router) + TypeScript',
           '- Tailwind CSS 4 + shadcn/ui',
-          '- Prisma ORM (SQLite)',
+          '- Prisma ORM (PostgreSQL)',
           '- React Query + Zustand',
           '- Recharts (لوحة التحكم)',
           '- z-ai-web-dev-sdk (توليد الصور)',
           '',
           '## الوصول',
-          'كلمة مرور الأدمن: admin123',
+          'لا تضع كلمة مرور لوحة التحكم في ملفات المشروع أو في واجهة الدخول.',
         ].join('\n')
       ),
       { name: 'PROJECT.md' }
