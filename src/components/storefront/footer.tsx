@@ -11,26 +11,6 @@ import {
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
-const QUICK_LINKS = [
-  { label: 'الرئيسية', href: '#home' },
-  { label: 'المنتجات', href: '#products' },
-  { label: 'الأصناف', href: '#categories' },
-  { label: 'من نحن', href: '#about' },
-]
-
-const CATEGORY_LINKS = [
-  'الزيوت',
-  'العسل',
-  'الفواكه المجففة',
-  'المخللات',
-  'منتجات الحليب',
-]
-
-function scrollToId(href: string) {
-  if (typeof document === 'undefined') return
-  document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
-}
-
 export function Footer() {
   return (
     <footer
@@ -38,14 +18,14 @@ export function Footer() {
       className="mt-auto bg-card border-t border-border/60"
     >
       <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid gap-8 md:grid-cols-2 md:gap-16">
           {/* Brand */}
-          <div className="space-y-3 md:col-span-1">
+          <div className="max-w-md space-y-3">
             <div className="flex items-center gap-2">
               <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <Leaf className="size-5" />
               </span>
-              <span className="text-lg font-bold font-amiri">دار الطبيعة</span>
+              <span className="text-lg font-bold font-amiri">جلال بيو</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               متجر مغربي للمنتجات الطبيعية الأصيلة. نختار لك أجود المنتجات من
@@ -65,49 +45,15 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Quick links */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-foreground">روابط سريعة</h4>
-            <ul className="space-y-2 text-sm">
-              {QUICK_LINKS.map((l) => (
-                <li key={l.href}>
-                  <button
-                    onClick={() => scrollToId(l.href)}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {l.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Categories */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-foreground">الأصناف</h4>
-            <ul className="space-y-2 text-sm">
-              {CATEGORY_LINKS.map((c) => (
-                <li key={c}>
-                  <button
-                    onClick={() => scrollToId('#categories')}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {c}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* Contact */}
           <div className="space-y-3">
             <h4 className="font-semibold text-foreground">تواصل معنا</h4>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="size-4 text-primary shrink-0" />
-                <span dir="ltr" className="text-right">
-                  +212 6 12 34 56 78
-                </span>
+                <a href="tel:+212626743617" dir="ltr" className="text-right hover:text-primary transition-colors">
+                  +212 626-743617
+                </a>
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="size-4 text-primary shrink-0" />
@@ -125,7 +71,7 @@ export function Footer() {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
           <p>
-            © {new Date().getFullYear()} دار الطبيعة. جميع الحقوق محفوظة.
+            © {new Date().getFullYear()} جلال بيو. جميع الحقوق محفوظة.
           </p>
           <p>صُنع بحب في المغرب 🇲🇦</p>
         </div>

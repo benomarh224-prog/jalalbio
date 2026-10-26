@@ -102,7 +102,7 @@ export async function GET() {
     archive.append(
       Buffer.from(
         [
-          '# دار الطبيعة - Dar Tabiaa',
+          '# جلال بيو - Jalalbio',
           '',
           'متجر إلكتروني لبيع المنتجات المغربية الطبيعية (زيت، عسل، تين مجفف، زيتون مخلل، خليع مغربي، عنب مشكل، زبدة البقر) مع لوحة تحكم أدمن.',
           '',
@@ -144,13 +144,13 @@ export async function GET() {
     await done
     const buffer = Buffer.concat(chunks)
 
-    const filename = encodeURIComponent('دار-الطبيعة-project.zip')
+    const filename = encodeURIComponent('جلال-بيو-project.zip')
 
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="dar-tabiaa-project.zip"; filename*=UTF-8''${filename}`,
+        'Content-Disposition': `attachment; filename="jalalbio-project.zip"; filename*=UTF-8''${filename}`,
         'Content-Length': String(buffer.length),
         'Cache-Control': 'no-store',
       },

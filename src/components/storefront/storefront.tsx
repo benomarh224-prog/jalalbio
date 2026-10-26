@@ -127,7 +127,7 @@ export default function Storefront() {
                   <div className="flex items-center gap-2 mb-1">
                     <Star className="size-5 fill-primary text-primary" />
                     <span className="text-sm font-medium text-primary">
-                      مختارات دار الطبيعة
+                      مختارات جلال بيو
                     </span>
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold font-amiri">

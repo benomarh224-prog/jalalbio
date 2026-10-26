@@ -56,13 +56,13 @@ export function Header({
         <button
           onClick={() => scrollToId('#home')}
           className="flex items-center gap-2 shrink-0"
-          aria-label="دار الطبيعة - الرئيسية"
+          aria-label="جلال بيو - الرئيسية"
         >
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Leaf className="size-5" />
           </span>
-          <span className="hidden sm:inline text-lg font-bold text-foreground font-amiri">
-            دار الطبيعة
+          <span className="text-base sm:text-lg font-bold text-foreground font-amiri">
+            جلال بيو
           </span>
         </button>
 
