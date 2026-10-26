@@ -7,14 +7,18 @@ export function Hero() {
   return (
     <section id="home" aria-labelledby="hero-title" className="scroll-mt-20 px-3 pb-5 pt-4 sm:px-6 lg:py-7">
       <div className="relative mx-auto flex min-h-[530px] max-w-7xl overflow-hidden rounded-[28px] bg-[#102c21] shadow-[0_18px_55px_-35px_#163c2b99] sm:min-h-[550px] sm:rounded-[36px] lg:min-h-[570px]">
-        <Image
-          src="/hero.png"
-          alt="زيت زيتون مغربي وزيتون وأعشاب طبيعية"
-          fill
-          priority
-          sizes="(max-width: 1280px) 100vw, 1280px"
-          className="object-cover object-[46%_center] md:object-center"
-        />
+        <picture className="absolute inset-0">
+          <source media="(max-width: 767px)" srcSet="/hero-jalalbio-mobile.webp" />
+          <Image
+            src="/hero-jalalbio-desktop.webp"
+            alt="زيت زيتون وعسل طبيعي مع زيتون وتين مجفف مغربي"
+            fill
+            loading="eager"
+            fetchPriority="high"
+            sizes="(max-width: 1280px) 100vw, 1280px"
+            className="object-cover object-top md:object-[center_25%]"
+          />
+        </picture>
         <div className="store-hero-shade pointer-events-none absolute inset-0" />
 
         <div className="absolute inset-x-6 top-6 flex items-center justify-between gap-3 sm:inset-x-9 sm:top-8">
