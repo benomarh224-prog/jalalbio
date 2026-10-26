@@ -1,321 +1,57 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Pencil, Trash2, Star, Package, AlertTriangle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
+import Image from 'next/image'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, CircleAlert, Package, Pencil, Plus, RefreshCcw, Search, Trash2 } from 'lucide-react'
 import { ProductFormDialog } from './product-form-dialog'
 import { formatMAD } from '@/lib/admin-utils'
 import type { Category, Product } from '@/lib/types'
-import Image from 'next/image'
+import { useToast } from '@/hooks/use-toast'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 
-type CategoryWithCount = Category & { _count?: { products: number } }
+const panel = 'rounded-[22px] border border-[#e5e8de] bg-white shadow-[0_10px_30px_-25px_#2c493b66]'
 
 export function ProductsManager() {
-  const qc = useQueryClient()
+  const queryClient = useQueryClient()
   const { toast } = useToast()
   const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('all')
+  const [editing, setEditing] = useState<Product | null>(null)
   const [formOpen, setFormOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<Product | null>(null)
 
-  const { data: productsData, isLoading } = useQuery<{
-    products: Product[]
-    databaseConnected: boolean
-  }>({
+  const productsQuery = useQuery<{ products: Product[]; databaseConnected: boolean }>({
     queryKey: ['admin', 'products'],
-    queryFn: async () => {
-      const r = await fetch('/api/products')
-      if (!r.ok) throw new Error('فشل في تحميل المنتجات')
-      return r.json()
-    },
+    queryFn: async () => { const response = await fetch('/api/products', { cache: 'no-store' }); if (!response.ok) throw new Error('فشل تحميل المنتجات'); return response.json() },
   })
-
-  const { data: categoriesData } = useQuery<{ categories: CategoryWithCount[] }>({
+  const categoriesQuery = useQuery<{ categories: Category[] }>({
     queryKey: ['admin', 'categories'],
-    queryFn: async () => {
-      const r = await fetch('/api/categories')
-      if (!r.ok) throw new Error('فشل في تحميل الأصناف')
-      return r.json()
-    },
+    queryFn: async () => { const response = await fetch('/api/categories', { cache: 'no-store' }); if (!response.ok) throw new Error('فشل تحميل الأصناف'); return response.json() },
+  })
+  const products = productsQuery.data?.products ?? []
+  const categories = categoriesQuery.data?.categories ?? []
+  const connected = productsQuery.data?.databaseConnected === true
+  const term = search.trim().toLocaleLowerCase()
+  const filtered = products.filter((product) => (category === 'all' || product.categoryId === category) && (!term || [product.name, product.nameAr, product.descriptionAr ?? ''].some((value) => value.toLocaleLowerCase().includes(term))))
+
+  const deletion = useMutation({
+    mutationFn: async (id: string) => { const response = await fetch(`/api/products/${id}`, { method: 'DELETE' }); if (!response.ok) throw new Error('تعذر حذف المنتج'); return response.json() },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin'] }); queryClient.invalidateQueries({ queryKey: ['products'] }); queryClient.invalidateQueries({ queryKey: ['categories'] }); setDeleting(null); toast({ title: 'تم حذف المنتج' }) },
+    onError: (error: Error) => toast({ title: 'خطأ', description: error.message, variant: 'destructive' }),
   })
 
-  const products = productsData?.products ?? []
-  const databaseConnected = productsData?.databaseConnected ?? false
-  const categories = categoriesData?.categories ?? []
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return products
-    const q = search.trim().toLowerCase()
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.nameAr.includes(search.trim()) ||
-        (p.descriptionAr ?? '').includes(search.trim()) ||
-        (p.origin ?? '').includes(search.trim()),
-    )
-  }, [products, search])
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const r = await fetch(`/api/products/${id}`, { method: 'DELETE' })
-      if (!r.ok) {
-        const e = await r.json().catch(() => ({ error: 'فشل في حذف المنتج' }))
-        throw new Error(e.error || 'فشل في حذف المنتج')
-      }
-      return r.json()
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['products'] })
-      qc.invalidateQueries({ queryKey: ['admin', 'products'] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
-      qc.invalidateQueries({ queryKey: ['categories'] })
-      qc.invalidateQueries({ queryKey: ['admin', 'categories'] })
-      toast({
-        title: 'تم الحذف',
-        description: 'تم حذف المنتج بنجاح',
-      })
-      setDeleteId(null)
-    },
-    onError: (e: Error) => {
-      toast({ title: 'خطأ', description: e.message, variant: 'destructive' })
-    },
-  })
-
-  const openEdit = (p: Product) => {
-    setEditingProduct(p)
-    setFormOpen(true)
-  }
-  const openCreate = () => {
-    setEditingProduct(null)
-    setFormOpen(true)
-  }
-
-  const productToDelete = deleteId
-    ? products.find((p) => p.id === deleteId)
-    : null
-
-  return (
-    <div className="space-y-5">
-      {!isLoading && !databaseConnected && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-          المنتجات المعروضة من الكتالوج الثابت. ربط قاعدة البيانات مطلوب لإضافة المنتجات أو تعديلها أو حذفها.
-        </div>
-      )}
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">المنتجات</h1>
-          <p className="text-sm text-muted-foreground">
-            {products.length} منتج في المتجر
-          </p>
-        </div>
-        <div className="flex w-full gap-2 sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="ابحث عن منتج..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pr-9"
-            />
-          </div>
-          <Button onClick={openCreate} disabled={!databaseConnected} className="gap-2 shrink-0">
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">إضافة منتج</span>
-            <span className="sm:hidden">إضافة</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>المنتج</TableHead>
-              <TableHead className="hidden md:table-cell">الصنف</TableHead>
-              <TableHead>السعر</TableHead>
-              <TableHead>المخزون</TableHead>
-              <TableHead className="hidden sm:table-cell">مميّز</TableHead>
-              <TableHead className="text-left">إجراءات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading &&
-              Array.from({ length: 4 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell colSpan={6}>
-                    <Skeleton className="h-12 w-full" />
-                  </TableCell>
-                </TableRow>
-              ))}
-
-            {!isLoading && filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6}>
-                  <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
-                    <Package className="size-10 opacity-40" />
-                    <p>لا توجد منتجات مطابقة</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-
-            {!isLoading &&
-              filtered.map((p) => {
-                const lowStock = p.stock < 50
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="relative size-12 shrink-0 overflow-hidden rounded-md border bg-muted">
-                          <Image
-                            src={p.image}
-                            alt={p.nameAr}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
-                            unoptimized
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="truncate font-medium">{p.nameAr}</div>
-                          <div
-                            dir="ltr"
-                            className="truncate text-xs text-muted-foreground"
-                          >
-                            {p.name}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Badge variant="secondary" className="font-normal">
-                        {p.category?.nameAr ?? '—'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{formatMAD(p.price)}</div>
-                      {p.oldPrice ? (
-                        <div className="text-xs text-muted-foreground line-through">
-                          {formatMAD(p.oldPrice)}
-                        </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      {lowStock ? (
-                        <Badge
-                          variant="outline"
-                          className="gap-1 border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
-                        >
-                          <AlertTriangle className="size-3" />
-                          {p.stock} - منخفض
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-                        >
-                          {p.stock}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      {p.featured ? (
-                        <Star className="size-4 fill-amber-400 text-amber-400" />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(p)}
-                          disabled={!databaseConnected}
-                          aria-label="تعديل"
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteId(p.id)}
-                          disabled={!databaseConnected}
-                          aria-label="حذف"
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-          </TableBody>
-        </Table>
-      </div>
-
-      <ProductFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        product={editingProduct}
-        categories={categories}
-      />
-
-      <AlertDialog
-        open={!!deleteId}
-        onOpenChange={(open) => !open && setDeleteId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-            <AlertDialogDescription>
-              هل أنت متأكد من حذف المنتج
-              <span className="mx-1 font-semibold text-foreground">
-                {productToDelete?.nameAr}
-              </span>
-              ؟ لا يمكن التراجع عن هذا الإجراء.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>
-              إلغاء
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-              disabled={deleteMutation.isPending}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? 'جاري الحذف...' : 'حذف'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  )
+  function openForm(product: Product | null) { setEditing(product); setFormOpen(true) }
+  return <div className="space-y-5">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold text-[#ab8752]">الكتالوج</p><h2 className="mt-1 text-2xl font-bold">إدارة المنتجات</h2><p className="mt-1 text-sm text-[#7d8a7e]">{products.length} منتج في المتجر</p></div><button type="button" onClick={() => openForm(null)} disabled={!connected} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1d4435] px-5 text-sm font-semibold text-white hover:bg-[#285743] disabled:cursor-not-allowed disabled:opacity-45"><Plus size={18} />إضافة منتج</button></div>
+    {!productsQuery.isPending && !connected && !productsQuery.isError && <div role="status" className="flex items-start gap-3 rounded-[18px] border border-[#ebd39e] bg-[#fff7e7] p-4 text-sm leading-7 text-[#654c26]"><AlertTriangle size={20} className="mt-1 shrink-0" /><p>المنتجات ظاهرة للعرض فقط. ربط قاعدة البيانات مطلوب قبل الإضافة أو التعديل أو الحذف.</p></div>}
+    <div className={`${panel} p-4 sm:p-5`}><div className="flex flex-col gap-3 sm:flex-row"><label className="flex h-11 flex-1 items-center gap-2 rounded-xl border border-[#e2e8dd] bg-[#fafbf8] px-3 focus-within:border-[#a7bba8]"><Search size={18} className="text-[#829284]" /><input aria-label="البحث عن منتج" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ابحث عن منتج..." className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none" /></label><select aria-label="تصفية حسب الصنف" value={category} onChange={(event) => setCategory(event.target.value)} className="h-11 min-w-40 rounded-xl border border-[#e2e8dd] bg-[#fafbf8] px-3 text-sm outline-none"><option value="all">جميع الأصناف</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.nameAr}</option>)}</select></div></div>
+    {productsQuery.isPending ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }, (_, index) => <div key={index} className="h-52 animate-pulse rounded-[22px] bg-white" />)}</div> : productsQuery.isError ? <div className={`${panel} p-8 text-center`}><CircleAlert size={32} className="mx-auto text-[#bb8b4a]" /><p className="mt-3 font-semibold">تعذر تحميل المنتجات</p><button type="button" onClick={() => productsQuery.refetch()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1d4435] px-4 py-2 text-sm text-white"><RefreshCcw size={16} />إعادة المحاولة</button></div> : filtered.length === 0 ? <div className={`${panel} py-16 text-center`}><Package size={35} className="mx-auto text-[#adb9ad]" /><p className="mt-3 text-sm font-medium text-[#78867a]">لا توجد منتجات مطابقة</p></div> : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((product) => <article key={product.id} className={`${panel} flex min-w-0 flex-col overflow-hidden p-4`}>
+      <div className="flex min-w-0 gap-4"><div className="relative size-21 shrink-0 overflow-hidden rounded-2xl bg-[#f2f3ed]"><Image src={product.image} alt={product.nameAr} fill sizes="84px" className="object-cover" unoptimized /></div><div className="min-w-0 flex-1"><p className="truncate font-bold">{product.nameAr}</p><p dir="ltr" className="mt-0.5 truncate text-left text-xs text-[#9aa59a]">{product.name}</p><span className="mt-2 inline-block rounded-full bg-[#f3f5ed] px-2.5 py-1 text-[11px] text-[#6e806e]">{product.category?.nameAr ?? categories.find((item) => item.id === product.categoryId)?.nameAr ?? 'بدون صنف'}</span></div></div>
+      <div className="mt-5 flex items-end justify-between border-t border-[#edf0e9] pt-4"><div><p className="text-xs text-[#89968a]">السعر</p><p className="mt-1 font-bold text-[#26553b]">{formatMAD(product.price)}</p></div><div className="text-left"><p className="text-xs text-[#89968a]">المخزون</p><p className={`mt-1 text-sm font-bold ${product.stock < 50 ? 'text-[#b26a47]' : 'text-[#516e57]'}`}>{product.stock} {product.unit}</p></div></div>
+      <div className="mt-4 flex gap-2"><button type="button" onClick={() => openForm(product)} disabled={!connected} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-[#dfe6db] text-xs font-semibold hover:bg-[#f3f7f0] disabled:cursor-not-allowed disabled:opacity-45"><Pencil size={15} />تعديل</button><button type="button" onClick={() => setDeleting(product)} disabled={!connected} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-[#f0ded7] text-xs font-semibold text-[#aa624b] hover:bg-[#fff4ef] disabled:cursor-not-allowed disabled:opacity-45"><Trash2 size={15} />حذف</button></div>
+    </article>)}</div>}
+    <ProductFormDialog open={formOpen} onOpenChange={setFormOpen} product={editing} categories={categories} />
+    <AlertDialog open={!!deleting} onOpenChange={(open) => { if (!open) setDeleting(null) }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>حذف المنتج؟</AlertDialogTitle><AlertDialogDescription>سيتم حذف «{deleting?.nameAr}» من المتجر. لا يمكن التراجع عن الحذف.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={deletion.isPending}>إلغاء</AlertDialogCancel><AlertDialogAction disabled={deletion.isPending} onClick={() => deleting && deletion.mutate(deleting.id)} className="bg-red-700 text-white hover:bg-red-800">{deletion.isPending ? 'جاري الحذف...' : 'تأكيد الحذف'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+  </div>
 }

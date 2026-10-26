@@ -187,3 +187,8 @@
 .animate-fade-up {
   animation: fade-up 0.5s ease-out forwards;
 }
+
+.admin-canvas {
+  background-color: #f7f8f2;
+  background-image: radial-gradient(circle at 85% 0%, #e7eddb 0, transparent 35%);
+}

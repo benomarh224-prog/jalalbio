@@ -1,473 +1,81 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, Loader2, ImageIcon } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
+import { useEffect, useState, type FormEvent } from 'react'
+import Image from 'next/image'
+import { useQueryClient } from '@tanstack/react-query'
+import { ImageIcon, LoaderCircle, Sparkles } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import type { Category, Product } from '@/lib/types'
-import Image from 'next/image'
 
-const UNITS = [
-  { value: 'كغ', label: 'كيلوغرام (كغ)' },
-  { value: 'لتر', label: 'لتر' },
-  { value: '500غ', label: '500 غرام' },
-  { value: 'حبة', label: 'حبة' },
-]
+type Fields = { nameAr: string; name: string; descriptionAr: string; description: string; price: string; oldPrice: string; stock: string; unit: string; categoryId: string; origin: string; image: string; featured: boolean }
+const empty: Fields = { nameAr: '', name: '', descriptionAr: '', description: '', price: '', oldPrice: '', stock: '0', unit: 'كغ', categoryId: '', origin: '', image: '', featured: false }
+const input = 'mt-2 h-11 w-full rounded-xl border border-[#dfe6db] bg-[#fafbf8] px-3 text-sm outline-none focus:border-[#9eb99f] focus:ring-2 focus:ring-[#9eb99f]/20'
 
-const schema = z.object({
-  name: z.string().min(1, 'الاسم بالإنجليزية مطلوب'),
-  nameAr: z.string().min(1, 'الاسم بالعربية مطلوب'),
-  description: z.string().optional(),
-  descriptionAr: z.string().optional(),
-  price: z.coerce.number().min(0.01, 'السعر مطلوب'),
-  oldPrice: z.coerce.number().optional(),
-  unit: z.string().min(1, 'الوحدة مطلوبة'),
-  categoryId: z.string().min(1, 'الصنف مطلوب'),
-  stock: z.coerce.number().min(0, 'المخزون مطلوب'),
-  featured: z.boolean(),
-  origin: z.string().optional(),
-  image: z.string().min(1, 'الصورة مطلوبة'),
-})
-
-// Input type (what the form receives — coerced numbers come in as
-// strings from <input type="number"> and are validated/coerced by zod).
-type FormInput = z.input<typeof schema>
-// Output type (what zodResolver produces after successful validation —
-// numeric fields are now proper numbers).
-type FormOutput = z.output<typeof schema>
-
-type CategoryWithCount = Category & { _count?: { products: number } }
-
-interface ProductFormDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  product: Product | null
-  categories: CategoryWithCount[]
-}
-
-export function ProductFormDialog({
-  open,
-  onOpenChange,
-  product,
-  categories,
-}: ProductFormDialogProps) {
-  const qc = useQueryClient()
+export function ProductFormDialog({ open, onOpenChange, product, categories }: { open: boolean; onOpenChange: (open: boolean) => void; product: Product | null; categories: Category[] }) {
+  const queryClient = useQueryClient()
   const { toast } = useToast()
-  const [isGenerating, setIsGenerating] = useState(false)
-  const isEdit = !!product
-
-  const form = useForm<FormInput, unknown, FormOutput>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      name: '',
-      nameAr: '',
-      description: '',
-      descriptionAr: '',
-      price: 0,
-      oldPrice: 0,
-      unit: 'كغ',
-      categoryId: '',
-      stock: 0,
-      featured: false,
-      origin: '',
-      image: '',
-    },
-  })
+  const [fields, setFields] = useState<Fields>(empty)
+  const [busy, setBusy] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!open) return
-    if (product) {
-      form.reset({
-        name: product.name,
-        nameAr: product.nameAr,
-        description: product.description ?? '',
-        descriptionAr: product.descriptionAr ?? '',
-        price: product.price,
-        oldPrice: product.oldPrice ?? 0,
-        unit: product.unit,
-        categoryId: product.categoryId,
-        stock: product.stock,
-        featured: product.featured,
-        origin: product.origin ?? '',
-        image: product.image,
-      })
-    } else {
-      form.reset({
-        name: '',
-        nameAr: '',
-        description: '',
-        descriptionAr: '',
-        price: 0,
-        oldPrice: 0,
-        unit: 'كغ',
-        categoryId: categories[0]?.id ?? '',
-        stock: 0,
-        featured: false,
-        origin: '',
-        image: '',
-      })
-    }
-  }, [open, product, form, categories])
+    setError('')
+    setFields(product ? {
+      nameAr: product.nameAr, name: product.name, descriptionAr: product.descriptionAr ?? '', description: product.description ?? '', price: String(product.price), oldPrice: product.oldPrice ? String(product.oldPrice) : '', stock: String(product.stock), unit: product.unit, categoryId: product.categoryId, origin: product.origin ?? '', image: product.image, featured: product.featured,
+    } : { ...empty, categoryId: categories[0]?.id ?? '' })
+  }, [open, product, categories])
 
-  const mutation = useMutation({
-    mutationFn: async (values: FormOutput) => {
-      const body = {
-        ...values,
-        rating: 5,
-        reviews: 0,
-        oldPrice: values.oldPrice ? Number(values.oldPrice) : null,
-        description: values.description || null,
-        descriptionAr: values.descriptionAr || null,
-        origin: values.origin || null,
-      }
-      const url = isEdit ? `/api/products/${product!.id}` : '/api/products'
-      const method = isEdit ? 'PUT' : 'POST'
-      const r = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!r.ok) {
-        const e = await r.json().catch(() => ({ error: 'فشل في الحفظ' }))
-        throw new Error(e.error || 'فشل في الحفظ')
-      }
-      return r.json()
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['products'] })
-      qc.invalidateQueries({ queryKey: ['admin', 'products'] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
-      qc.invalidateQueries({ queryKey: ['categories'] })
-      qc.invalidateQueries({ queryKey: ['admin', 'categories'] })
-      toast({
-        title: isEdit ? 'تم التحديث' : 'تمت الإضافة',
-        description: isEdit
-          ? 'تم تحديث المنتج بنجاح'
-          : 'تمت إضافة المنتج بنجاح',
-      })
-      onOpenChange(false)
-    },
-    onError: (e: Error) => {
-      toast({ title: 'خطأ', description: e.message, variant: 'destructive' })
-    },
-  })
+  function change<K extends keyof Fields>(key: K, value: Fields[K]) { setFields((current) => ({ ...current, [key]: value })) }
 
-  const generateImage = async () => {
-    const nameAr = form.getValues('nameAr')
-    if (!nameAr || nameAr.trim().length < 2) {
-      toast({
-        title: 'تنبيه',
-        description: 'أدخل اسم المنتج بالعربية أولاً',
-        variant: 'destructive',
-      })
-      return
-    }
-    setIsGenerating(true)
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const price = Number(fields.price)
+    const stock = Number(fields.stock)
+    if (!fields.nameAr.trim() || !fields.image.trim() || !fields.categoryId || !Number.isFinite(price) || price <= 0 || !Number.isInteger(stock) || stock < 0) { setError('أكمل الاسم، الصنف، الصورة، السعر والمخزون بشكل صحيح.'); return }
+    if (fields.oldPrice && (Number(fields.oldPrice) <= 0 || !Number.isFinite(Number(fields.oldPrice)))) { setError('السعر القديم غير صحيح.'); return }
+    setBusy(true); setError('')
     try {
-      const r = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `${nameAr} Moroccan natural product` }),
+      const response = await fetch(product ? `/api/products/${product.id}` : '/api/products', {
+        method: product ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...fields, nameAr: fields.nameAr.trim(), name: fields.name.trim() || fields.nameAr.trim(), price, oldPrice: fields.oldPrice ? Number(fields.oldPrice) : null, stock, descriptionAr: fields.descriptionAr.trim() || null, description: fields.description.trim() || null, origin: fields.origin.trim() || null, image: fields.image.trim(), rating: product?.rating ?? 5, reviews: product?.reviews ?? 0 }),
       })
-      if (!r.ok) throw new Error('فشل في توليد الصورة')
-      const data = await r.json()
-      form.setValue('image', data.url, { shouldValidate: true })
-      toast({
-        title: 'تم توليد الصورة',
-        description: 'تم حفظ الصورة الجديدة',
-      })
-    } catch (e) {
-      toast({
-        title: 'خطأ',
-        description: (e as Error).message,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsGenerating(false)
-    }
+      if (!response.ok) throw new Error('تعذر حفظ المنتج. حاول مجدداً.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin'] }),
+        queryClient.invalidateQueries({ queryKey: ['products'] }),
+        queryClient.invalidateQueries({ queryKey: ['categories'] }),
+      ])
+      toast({ title: product ? 'تم تحديث المنتج' : 'تمت إضافة المنتج' })
+      onOpenChange(false)
+    } catch (reason) { setError((reason as Error).message) } finally { setBusy(false) }
   }
 
-  const imageUrl = form.watch('image')
-  const unitValue = form.watch('unit')
-  const categoryValue = form.watch('categoryId')
-  const featuredValue = form.watch('featured')
-  const {
-    errors,
-    isSubmitting,
-  } = form.formState
+  async function generateImage() {
+    if (!fields.nameAr.trim()) { setError('أدخل اسم المنتج أولاً.'); return }
+    setGenerating(true); setError('')
+    try {
+      const response = await fetch('/api/generate-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: `${fields.nameAr.trim()} Moroccan natural product` }) })
+      if (!response.ok) throw new Error('تعذر توليد الصورة. يمكنك وضع رابط صورة بدلاً منها.')
+      const result = await response.json()
+      if (!result.url) throw new Error('لم ترجع خدمة الصور رابطاً صالحاً.')
+      change('image', result.url)
+    } catch (reason) { setError((reason as Error).message) } finally { setGenerating(false) }
+  }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="custom-scroll max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'تعديل المنتج' : 'إضافة منتج جديد'}</DialogTitle>
-          <DialogDescription>
-            {isEdit
-              ? 'قم بتعديل تفاصيل المنتج ثم اضغط حفظ'
-              : 'أدخل تفاصيل المنتج الجديد ثم اضغط إضافة'}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form
-          onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
-          className="space-y-5"
-        >
-          {/* Image preview + URL + AI generate */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[120px_1fr] sm:items-start">
-            <div className="relative size-28 shrink-0 overflow-hidden rounded-lg border bg-muted">
-              {imageUrl ? (
-                <Image
-                  src={imageUrl}
-                  alt="معاينة المنتج"
-                  fill
-                  className="object-cover"
-                  sizes="112px"
-                  unoptimized
-                />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-muted-foreground">
-                  <ImageIcon className="size-5" />
-                  لا توجد صورة
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="image">رابط الصورة</Label>
-              <Input
-                id="image"
-                placeholder="/products/example.png"
-                dir="ltr"
-                {...form.register('image')}
-              />
-              {errors.image && (
-                <p className="text-xs text-destructive">{errors.image.message}</p>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={generateImage}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Sparkles className="size-4" />
-                )}
-                {isGenerating ? 'جاري التوليد...' : 'توليد صورة بالذكاء الاصطناعي'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Names */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="nameAr">الاسم بالعربية</Label>
-              <Input
-                id="nameAr"
-                placeholder="مثلاً: عسل حر طبيعي"
-                {...form.register('nameAr')}
-              />
-              {errors.nameAr && (
-                <p className="text-xs text-destructive">{errors.nameAr.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="name">الاسم بالإنجليزية</Label>
-              <Input
-                id="name"
-                placeholder="Natural honey"
-                dir="ltr"
-                {...form.register('name')}
-              />
-              {errors.name && (
-                <p className="text-xs text-destructive">{errors.name.message}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Descriptions */}
-          <div className="space-y-2">
-            <Label htmlFor="descriptionAr">الوصف بالعربية</Label>
-            <Textarea
-              id="descriptionAr"
-              rows={3}
-              placeholder="وصف المنتج بالعربية..."
-              {...form.register('descriptionAr')}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">الوصف بالإنجليزية (اختياري)</Label>
-            <Textarea
-              id="description"
-              rows={2}
-              dir="ltr"
-              placeholder="English description..."
-              {...form.register('description')}
-            />
-          </div>
-
-          {/* Numeric fields */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">السعر (درهم)</Label>
-              <Input
-                id="price"
-                type="number"
-                min={0}
-                step="0.01"
-                {...form.register('price')}
-              />
-              {errors.price && (
-                <p className="text-xs text-destructive">{errors.price.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="oldPrice">السعر القديم</Label>
-              <Input
-                id="oldPrice"
-                type="number"
-                min={0}
-                step="0.01"
-                {...form.register('oldPrice')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock">المخزون</Label>
-              <Input
-                id="stock"
-                type="number"
-                min={0}
-                {...form.register('stock')}
-              />
-              {errors.stock && (
-                <p className="text-xs text-destructive">{errors.stock.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="origin">المنشأ</Label>
-              <Input
-                id="origin"
-                placeholder="مثلا: فاس"
-                {...form.register('origin')}
-              />
-            </div>
-          </div>
-
-          {/* Unit + category */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>الوحدة</Label>
-              <Select
-                value={unitValue}
-                onValueChange={(v) => form.setValue('unit', v, { shouldValidate: true })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="اختر الوحدة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNITS.map((u) => (
-                    <SelectItem key={u.value} value={u.value}>
-                      {u.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.unit && (
-                <p className="text-xs text-destructive">{errors.unit.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>الصنف</Label>
-              <Select
-                value={categoryValue}
-                onValueChange={(v) =>
-                  form.setValue('categoryId', v, { shouldValidate: true })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="اختر الصنف" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.length === 0 && (
-                    <SelectItem value="_none" disabled>
-                      لا توجد أصناف
-                    </SelectItem>
-                  )}
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.nameAr}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.categoryId && (
-                <p className="text-xs text-destructive">{errors.categoryId.message}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Featured switch */}
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
-              <Label htmlFor="featured">منتج مميّز</Label>
-              <p className="text-xs text-muted-foreground">
-                يظهر في الصفحة الرئيسية ضمن المنتجات المميزة
-              </p>
-            </div>
-            <Switch
-              id="featured"
-              checked={featuredValue}
-              onCheckedChange={(v) => form.setValue('featured', v)}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={mutation.isPending || isSubmitting}
-            >
-              إلغاء
-            </Button>
-            <Button
-              type="submit"
-              disabled={mutation.isPending || isSubmitting}
-              className="gap-2"
-            >
-              {(mutation.isPending || isSubmitting) && (
-                <Loader2 className="size-4 animate-spin" />
-              )}
-              {isEdit ? 'حفظ التغييرات' : 'إضافة المنتج'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[92vh] max-w-[720px] overflow-y-auto rounded-[24px] p-0"><DialogHeader className="border-b border-[#e9ece3] p-5 pb-4 text-right sm:p-6"><DialogTitle className="text-xl">{product ? 'تعديل المنتج' : 'إضافة منتج جديد'}</DialogTitle><p className="text-sm text-[#839083]">أدخل معلومات المنتج ثم احفظ التغييرات.</p></DialogHeader>
+    <form onSubmit={submit} className="space-y-5 p-5 pt-0 sm:p-6 sm:pt-0">
+      <div className="grid gap-4 sm:grid-cols-[112px_1fr]"><div className="relative size-28 overflow-hidden rounded-2xl border border-[#e2e8dd] bg-[#f4f6ef]">{fields.image ? <Image src={fields.image} alt="معاينة المنتج" fill sizes="112px" className="object-cover" unoptimized /> : <div className="flex h-full flex-col items-center justify-center gap-1 text-xs text-[#a2aea2]"><ImageIcon size={24} />صورة المنتج</div>}</div><div><label className="text-sm font-semibold">رابط الصورة<input value={fields.image} onChange={(event) => change('image', event.target.value)} className={input} dir="ltr" placeholder="https://... أو /products/image.jpg" /></label><button type="button" onClick={generateImage} disabled={generating} className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-[#31714e] disabled:opacity-50">{generating ? <LoaderCircle size={15} className="animate-spin" /> : <Sparkles size={15} />}{generating ? 'جاري التوليد...' : 'توليد صورة'}</button></div></div>
+      <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold">الاسم بالعربية *<input value={fields.nameAr} onChange={(event) => change('nameAr', event.target.value)} className={input} required /></label><label className="text-sm font-semibold">الاسم بالإنجليزية<input value={fields.name} onChange={(event) => change('name', event.target.value)} className={input} dir="ltr" /></label></div>
+      <label className="block text-sm font-semibold">الوصف بالعربية<textarea value={fields.descriptionAr} onChange={(event) => change('descriptionAr', event.target.value)} rows={3} className={`${input} h-auto min-h-24 py-3`} /></label>
+      <label className="block text-sm font-semibold">الوصف بالإنجليزية<textarea value={fields.description} onChange={(event) => change('description', event.target.value)} rows={2} dir="ltr" className={`${input} h-auto min-h-18 py-3`} /></label>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4"><label className="text-sm font-semibold">السعر *<input type="number" min="0.01" step="0.01" value={fields.price} onChange={(event) => change('price', event.target.value)} className={input} required /></label><label className="text-sm font-semibold">السعر القديم<input type="number" min="0" step="0.01" value={fields.oldPrice} onChange={(event) => change('oldPrice', event.target.value)} className={input} /></label><label className="text-sm font-semibold">المخزون *<input type="number" min="0" step="1" value={fields.stock} onChange={(event) => change('stock', event.target.value)} className={input} required /></label><label className="text-sm font-semibold">المنشأ<input value={fields.origin} onChange={(event) => change('origin', event.target.value)} className={input} /></label></div>
+      <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold">الوحدة<select value={fields.unit} onChange={(event) => change('unit', event.target.value)} className={input}><option value="كغ">كيلوغرام (كغ)</option><option value="لتر">لتر</option><option value="500غ">500 غرام</option><option value="حبة">حبة</option></select></label><label className="text-sm font-semibold">الصنف *<select value={fields.categoryId} onChange={(event) => change('categoryId', event.target.value)} className={input} required><option value="">اختر الصنف</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.nameAr}</option>)}</select></label></div>
+      <label className="flex items-center gap-3 rounded-xl border border-[#e5eade] bg-[#fafbf8] p-4 text-sm font-semibold"><input type="checkbox" checked={fields.featured} onChange={(event) => change('featured', event.target.checked)} className="size-4 accent-[#285b40]" />إظهار المنتج ضمن المنتجات المميزة</label>
+      {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      <div className="flex justify-end gap-3 border-t border-[#e9ece3] pt-4"><button type="button" onClick={() => onOpenChange(false)} disabled={busy} className="h-11 rounded-xl border border-[#e1e7dc] px-5 text-sm font-semibold">إلغاء</button><button type="submit" disabled={busy} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#1d4435] px-5 text-sm font-semibold text-white disabled:opacity-50">{busy && <LoaderCircle size={16} className="animate-spin" />}{product ? 'حفظ التغييرات' : 'إضافة المنتج'}</button></div>
+    </form>
+  </DialogContent></Dialog>
 }
