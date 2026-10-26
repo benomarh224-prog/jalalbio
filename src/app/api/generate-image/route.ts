@@ -1,48 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ZAI from 'z-ai-web-dev-sdk'
-import fs from 'fs'
-import path from 'path'
+import sharp from 'sharp'
 import { requireAdmin } from '@/lib/admin-auth'
+import { saveMedia, StoreError } from '@/lib/store-data'
+import { storeFailure } from '@/lib/store-response'
 
 export async function POST(request: NextRequest) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
-
   try {
-    const body = await request.json()
-    const { prompt } = body
-
-    if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json(
-        { error: 'Prompt is required' },
-        { status: 400 }
-      )
-    }
-
+    const { prompt } = await request.json()
+    if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 1000) throw new StoreError('اسم المنتج مطلوب', 400)
     const zai = await ZAI.create()
-    const response = await zai.images.generations.create({
-      prompt: `${prompt}, professional product photography, clean background, warm natural lighting, high quality`,
-      size: '1024x1024',
-    })
-
-    const imageBase64 = response.data[0].base64
-    const buffer = Buffer.from(imageBase64, 'base64')
-
-    // Save to public/products with unique name
-    const filename = `gen-${Date.now()}.png`
-    const outputDir = path.join(process.cwd(), 'public', 'products')
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true })
-    }
-    const filepath = path.join(outputDir, filename)
-    fs.writeFileSync(filepath, buffer)
-
-    return NextResponse.json({ url: `/products/${filename}` })
-  } catch (error) {
-    console.error('POST /api/generate-image error:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate image' },
-      { status: 500 }
-    )
-  }
+    const response = await zai.images.generations.create({ prompt: `${prompt}, professional product photography, clean background, warm natural lighting, high quality`, size: '1024x1024' })
+    const bytes = await sharp(Buffer.from(response.data[0].base64, 'base64')).webp({ quality: 85 }).toBuffer()
+    return NextResponse.json({ url: await saveMedia(bytes) })
+  } catch (error) { return storeFailure(error) }
 }

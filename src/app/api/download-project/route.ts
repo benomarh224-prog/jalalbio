@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic'
 // Files and folders to include in the project zip
 const INCLUDE_PATHS = [
   'src',
-  'prisma',
   'public',
   'package.json',
   'bun.lock',
@@ -91,7 +90,7 @@ export async function GET() {
       Buffer.from(
         [
           '# Environment variables',
-          'DATABASE_URL=postgresql://user:password@host/database?sslmode=require',
+          'BLOB_READ_WRITE_TOKEN=replace-with-the-project-blob-token',
           '',
           'ADMIN_PASSWORD=replace-with-a-private-password',
         ].join('\n')
@@ -111,9 +110,6 @@ export async function GET() {
           '',
           '```bash',
           'bun install',
-          'bun run db:generate',
-          'bun run db:push',
-          'bun run db:seed',
           'bun run dev',
           '```',
           '',
@@ -124,9 +120,8 @@ export async function GET() {
           '## التقنيات',
           '- Next.js 16 (App Router) + TypeScript',
           '- Tailwind CSS 4 + shadcn/ui',
-          '- Prisma ORM (PostgreSQL)',
+          '- Vercel Blob (تخزين خاص للمنتجات والطلبات والصور)',
           '- React Query + Zustand',
-          '- Recharts (لوحة التحكم)',
           '- z-ai-web-dev-sdk (توليد الصور)',
           '',
           '## الوصول',

@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -48,6 +49,7 @@ export function CheckoutDialog({
   const closeCart = useCart((s) => s.closeCart)
 
   const subtotal = totalPrice()
+  const requestId = useRef<string | null>(null)
 
   const {
     register,
@@ -67,9 +69,10 @@ export function CheckoutDialog({
 
   const onSubmit = async (values: FormValues) => {
     try {
+      requestId.current ||= crypto.randomUUID()
       const res = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestId.current },
         body: JSON.stringify({
           customerName: values.customerName,
           phone: values.phone,
@@ -90,7 +93,8 @@ export function CheckoutDialog({
           })
           return
         }
-        throw new Error('فشل إرسال الطلب')
+        const result = await res.json()
+        throw new Error(result.error || 'فشل إرسال الطلب')
       }
 
       const data = (await res.json()) as { order: { orderNumber: string } }
@@ -98,12 +102,13 @@ export function CheckoutDialog({
         description: `رقم الطلب: ${data.order.orderNumber}`,
       })
       clearCart()
+      requestId.current = null
       closeCart()
       reset()
       onOpenChange(false)
-    } catch {
+    } catch (error) {
       toast.error('حدث خطأ أثناء إرسال الطلب', {
-        description: 'يرجى المحاولة مرة أخرى',
+        description: error instanceof Error ? error.message : 'يرجى المحاولة مرة أخرى',
       })
     }
   }

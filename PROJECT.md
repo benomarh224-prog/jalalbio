@@ -6,9 +6,6 @@
 
 ```bash
 bun install
-bun run db:generate
-bun run db:push
-bun run db:seed
 bun run dev
 ```
 
@@ -16,12 +13,17 @@ bun run dev
 
 افتح `/dashboard` للدخول إلى لوحة التحكم. تُضبط كلمة المرور في متغير البيئة `ADMIN_PASSWORD` على الخادم.
 
+## التخزين
+
+المنتجات والطلبات والمخزون محفوظة في ملف JSON خاص داخل Vercel Blob، والصور في ملفات منفصلة. يربط المشروع بمتغير `BLOB_READ_WRITE_TOKEN`؛ لا يحتاج قاعدة بيانات SQL أو إنشاء جداول. أول قراءة تعرض الكتالوج الأصلي، وأول تعديل يحفظه تلقائياً. عمليات الحفظ تستخدم ETag لمنع الكتابات المتزامنة من مسح بعضها، والطلب والمخزون يتحفظان معاً.
+
+للتشغيل المحلي، ضع متغيري `BLOB_READ_WRITE_TOKEN` و`ADMIN_PASSWORD` في `.env.local` الذي لا يرفع إلى Git. للاختبارات المعزولة يمكن تحديد `BLOB_DOCUMENT_PATH` باسم ملف مستقل؛ لا تستخدمه في بيئة الإنتاج.
+
 ## التقنيات
 - Next.js 16 (App Router) + TypeScript
 - Tailwind CSS 4 + shadcn/ui
-- Prisma ORM (PostgreSQL)
+- Vercel Blob (تخزين خاص للمنتجات والطلبات والصور)
 - React Query + Zustand
-- Recharts (لوحة التحكم)
 - z-ai-web-dev-sdk (توليد الصور)
 
 ## الوصول
