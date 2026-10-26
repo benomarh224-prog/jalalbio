@@ -70,7 +70,7 @@ export function ProductCard({
       </button>
 
       {/* Body */}
-      <div className="flex flex-col gap-2 p-4 flex-1">
+      <div className="flex flex-col gap-2 p-3 sm:p-4 flex-1">
         <h3 className="font-semibold text-foreground line-clamp-2 text-sm md:text-base">
           {product.nameAr}
         </h3>

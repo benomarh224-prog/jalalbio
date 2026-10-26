@@ -5,7 +5,7 @@ import { ArrowUpLeft, Leaf, ShoppingBag, ShieldCheck, Truck } from 'lucide-react
 
 export function Hero() {
   return (
-    <section id="home" aria-labelledby="hero-title" className="scroll-mt-20 px-3 pb-5 pt-4 sm:px-6 lg:py-7">
+    <section id="home" aria-labelledby="hero-title" className="scroll-mt-20 px-3 py-3 sm:px-6 lg:py-5">
       <div className="relative mx-auto flex min-h-[530px] max-w-7xl overflow-hidden rounded-[28px] bg-[#102c21] shadow-[0_18px_55px_-35px_#163c2b99] sm:min-h-[550px] sm:rounded-[36px] lg:min-h-[570px]">
         <picture className="absolute inset-0">
           <source media="(max-width: 767px)" srcSet="/hero-jalalbio-mobile.webp" />

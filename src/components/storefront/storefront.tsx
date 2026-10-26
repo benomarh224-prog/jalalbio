@@ -114,14 +114,14 @@ export default function Storefront() {
 
         {/* Featured products */}
         {featuredProducts.length > 0 && (
-          <section className="py-12 md:py-16 border-b border-border/60">
+          <section className="py-6 md:py-10 border-b border-border/60">
             <div className="container mx-auto px-4">
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4 }}
-                className="mb-8 flex items-center justify-between gap-4"
+                className="mb-5 flex items-center justify-between gap-4 md:mb-6"
               >
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -136,7 +136,7 @@ export default function Storefront() {
                 </div>
               </motion.div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
                 {featuredProducts.map((p) => (
                   <ProductCard
                     key={p.id}
@@ -150,14 +150,14 @@ export default function Storefront() {
         )}
 
         {/* All products */}
-        <section id="products" className="py-12 md:py-16 scroll-mt-16">
+        <section id="products" className="py-6 md:py-10 scroll-mt-20">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4 }}
-              className="mb-6 text-center"
+              className="mb-4 text-center md:mb-5"
             >
               <h2 className="text-2xl md:text-3xl font-bold mb-2 font-amiri">
                 كل المنتجات
@@ -168,7 +168,7 @@ export default function Storefront() {
             </motion.div>
 
             {/* Search bar + category filter chips */}
-            <div className="mb-8 space-y-3">
+            <div className="mb-5 space-y-3">
               <div className="relative max-w-xl mx-auto">
                 <Search className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
@@ -234,7 +234,7 @@ export default function Storefront() {
 
             {/* Grid */}
             {loadingProducts ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div
                     key={i}
@@ -250,7 +250,7 @@ export default function Storefront() {
                 ))}
               </div>
             ) : productsError ? (
-              <div className="text-center py-16">
+              <div className="text-center py-8 md:py-12">
                 <h3 className="text-lg font-semibold mb-2">تعذّر تحميل المنتجات</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   حدث خطأ أثناء الاتصال بالخادم. حاول مرة أخرى.
@@ -260,7 +260,7 @@ export default function Storefront() {
                 </Button>
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-16">
+              <div className="text-center py-8 md:py-12">
                 <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-full bg-muted">
                   <Search className="size-9 text-muted-foreground" />
                 </div>
@@ -281,7 +281,7 @@ export default function Storefront() {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
                 {filteredProducts.map((p) => (
                   <ProductCard
                     key={p.id}

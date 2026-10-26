@@ -17,8 +17,8 @@ export function Footer() {
       id="about"
       className="mt-auto bg-card border-t border-border/60"
     >
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-2 md:gap-16">
+      <div className="container mx-auto px-4 py-7 md:py-10">
+        <div className="grid gap-6 md:grid-cols-2 md:gap-12">
           {/* Brand */}
           <div className="max-w-md space-y-3">
             <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export function Footer() {
           </div>
         </div>
 
-        <Separator className="my-6" />
+        <Separator className="my-5" />
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
           <p>

@@ -13,8 +13,8 @@ const FEATURES = [
 export function FeaturesStrip() {
   return (
     <section aria-label="مزايا التسوق" className="border-b border-border/60 bg-card/40">
-      <div className="mx-auto max-w-7xl px-5 py-5 sm:px-6 sm:py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-5 md:gap-6">
+      <div className="mx-auto max-w-7xl px-5 py-4 sm:px-6 sm:py-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 md:gap-6">
           {FEATURES.map((f, i) => (
             <motion.div
               key={f.title}
