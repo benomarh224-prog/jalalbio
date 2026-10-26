@@ -1,101 +1,58 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { ShoppingBag, Layers, Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-
-const STATS = [
-  { num: '+1000', label: 'زبون سعيد' },
-  { num: '7', label: 'منتجات أصيلة' },
-  { num: '100%', label: 'طبيعي' },
-]
+import { ArrowUpLeft, Leaf, ShoppingBag, ShieldCheck, Truck } from 'lucide-react'
 
 export function Hero() {
-  const scrollTo = (sel: string) => {
-    if (typeof document === 'undefined') return
-    document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   return (
-    <section
-      id="home"
-      className="relative overflow-hidden hero-gradient"
-    >
-      <div className="absolute inset-0 pattern-zellige opacity-60 pointer-events-none" />
+    <section id="home" aria-labelledby="hero-title" className="scroll-mt-20 px-3 pb-5 pt-4 sm:px-6 lg:py-7">
+      <div className="relative mx-auto flex min-h-[530px] max-w-7xl overflow-hidden rounded-[28px] bg-[#102c21] shadow-[0_18px_55px_-35px_#163c2b99] sm:min-h-[550px] sm:rounded-[36px] lg:min-h-[570px]">
+        <Image
+          src="/hero.png"
+          alt="زيت زيتون مغربي وزيتون وأعشاب طبيعية"
+          fill
+          priority
+          sizes="(max-width: 1280px) 100vw, 1280px"
+          className="object-cover object-[46%_center] md:object-center"
+        />
+        <div className="store-hero-shade pointer-events-none absolute inset-0" />
 
-      <div className="container relative mx-auto px-4 py-12 md:py-20">
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
-          {/* Text */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center md:text-right order-2 md:order-1"
-          >
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-4">
-              <Sparkles className="size-3.5" />
-              منتجات طبيعية 100% من قلب المغرب
-            </span>
+        <div className="absolute inset-x-6 top-6 flex items-center justify-between gap-3 sm:inset-x-9 sm:top-8">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e9d4a3]/35 bg-[#163626]/45 px-3 py-1.5 text-[11px] font-semibold text-[#fff2cf] backdrop-blur-md">
+            <Leaf className="size-3.5" /> طبيعي وأصيل
+          </span>
+          <span className="text-[10px] font-semibold tracking-[.22em] text-white/85 sm:text-xs">JALALBIO</span>
+        </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-4 font-amiri">
-              منتجات مغربية طبيعية أصيلة
-            </h1>
+        <div className="relative z-10 flex w-full flex-col justify-end px-6 pb-7 pt-36 text-right sm:px-9 sm:pb-9 md:max-w-[62%] md:justify-center md:pb-12 md:pt-24 lg:max-w-[58%] lg:px-14">
+          <div className="mb-3 flex items-center gap-2 text-[11px] font-medium text-[#eed4a0] sm:text-xs">
+            <span className="h-px w-6 bg-[#dcb66e]" /> من الأرض المغربية إلى مائدتك
+          </div>
+          <h1 id="hero-title" className="font-amiri text-[44px] font-bold leading-[1.23] tracking-normal text-[#fff9ec] sm:text-[58px] lg:text-[72px]">
+            خيرات المغرب،
+            <span className="mt-1 block text-[#efcd86]">لباب دارك.</span>
+          </h1>
+          <p className="mt-4 max-w-[32ch] text-[13px] leading-[1.9] text-[#edf2e7]/85 sm:max-w-[39ch] sm:text-base">
+            زيت بلدي، عسل طبيعي ومختارات أصيلة من أجود المنتجات المغربية. مذاق تختاره بثقة.
+          </p>
 
-            <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed">
-              اكتشف أجود أنواع الزيت والعسل والتين المجفف والمنتجات الطبيعية المغربية،
-              مصنوعة بحب من قلب جبال الأطلس.
-            </p>
+          <div className="mt-6 grid grid-cols-2 items-center gap-2.5 sm:mt-7 sm:flex sm:flex-wrap sm:gap-3">
+            <a href="#products" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#e9bc64] px-3 text-xs font-bold text-[#173225] shadow-lg shadow-black/10 transition hover:bg-[#f4ce83] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f4ce83] sm:px-6 sm:text-sm">
+              <ShoppingBag className="size-4" /> تسوق الآن <ArrowUpLeft className="hidden size-4 sm:block" />
+            </a>
+            <a href="#categories" className="inline-flex h-12 items-center justify-center rounded-xl border border-white/30 bg-white/5 px-3 text-xs font-semibold text-[#fff9ec] backdrop-blur-sm transition hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:px-6 sm:text-sm">
+              اكتشف الأصناف
+            </a>
+          </div>
 
-            <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-              <Button size="lg" className="min-h-11" onClick={() => scrollTo('#products')}>
-                <ShoppingBag className="size-4" />
-                تسوق الآن
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="min-h-11"
-                onClick={() => scrollTo('#categories')}
-              >
-                <Layers className="size-4" />
-                اكتشف الأصناف
-              </Button>
-            </div>
-
-            <div className="mt-10 flex flex-wrap gap-8 justify-center md:justify-start">
-              {STATS.map((s) => (
-                <div key={s.label} className="text-center md:text-right">
-                  <div className="text-2xl md:text-3xl font-bold text-primary">
-                    {s.num}
-                  </div>
-                  <div className="text-xs md:text-sm text-muted-foreground">
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Image */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.15 }}
-            className="relative order-1 md:order-2"
-          >
-            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
-            <div className="relative animate-float">
-              <Image
-                src="/hero.png"
-                alt="منتجات مغربية طبيعية أصيلة"
-                width={600}
-                height={600}
-                priority
-                className="w-full h-auto max-w-md mx-auto rounded-3xl shadow-2xl"
-              />
-            </div>
-          </motion.div>
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-[#dae4d5] sm:mt-6 sm:text-xs">
+            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-[#e0c17e]" />الدفع عند الاستلام</span>
+            <span className="inline-flex items-center gap-1.5"><Truck className="size-3.5 text-[#e0c17e]" />توصيل لجميع المدن</span>
+          </div>
+        </div>
+        <div className="absolute bottom-10 left-10 hidden items-center gap-3 rounded-2xl border border-white/25 bg-[#fffaf0]/95 px-5 py-4 text-[#24402c] shadow-xl backdrop-blur-md lg:flex">
+          <span className="grid size-10 place-items-center rounded-full bg-[#e8efdf]"><Leaf className="size-5" /></span>
+          <div><p className="text-sm font-bold">أصالة من قلب المغرب</p><p className="mt-0.5 text-xs text-[#71816a]">منتجات مختارة بعناية</p></div>
         </div>
       </div>
     </section>

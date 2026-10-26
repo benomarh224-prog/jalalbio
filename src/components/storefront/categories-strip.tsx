@@ -37,7 +37,7 @@ export function CategoriesStrip({
   ]
 
   return (
-    <section id="categories" className="py-12 md:py-16 border-b border-border/60">
+    <section id="categories" className="scroll-mt-20 py-12 md:py-16 border-b border-border/60">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 12 }}

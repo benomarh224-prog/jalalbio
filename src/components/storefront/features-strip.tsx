@@ -12,9 +12,9 @@ const FEATURES = [
 
 export function FeaturesStrip() {
   return (
-    <section className="border-y border-border/60 bg-card/50">
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <section aria-label="مزايا التسوق" className="border-b border-border/60 bg-card/40">
+      <div className="mx-auto max-w-7xl px-5 py-5 sm:px-6 sm:py-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-5 md:gap-6">
           {FEATURES.map((f, i) => (
             <motion.div
               key={f.title}
@@ -22,16 +22,16 @@ export function FeaturesStrip() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="flex items-center gap-3"
+              className="flex items-start gap-2.5 sm:items-center sm:gap-3"
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <f.icon className="size-5" />
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:size-10">
+                <f.icon className="size-4 sm:size-5" />
               </span>
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-foreground truncate">
+                <div className="text-xs font-semibold leading-5 text-foreground sm:text-sm">
                   {f.title}
                 </div>
-                <div className="text-xs text-muted-foreground truncate">
+                <div className="mt-0.5 text-[10px] leading-4 text-muted-foreground sm:text-xs">
                   {f.desc}
                 </div>
               </div>
