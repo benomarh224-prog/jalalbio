@@ -28,7 +28,12 @@ export default function Storefront() {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
 
   // Fetch products (single source of truth, filter on client)
-  const { data: productsData, isLoading: loadingProducts } = useQuery({
+  const {
+    data: productsData,
+    isLoading: loadingProducts,
+    isError: productsError,
+    refetch: refetchProducts,
+  } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       const res = await fetch('/api/products')
@@ -38,7 +43,11 @@ export default function Storefront() {
     },
   })
 
-  const { data: categoriesData } = useQuery({
+  const {
+    data: categoriesData,
+    isError: categoriesError,
+    refetch: refetchCategories,
+  } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       const res = await fetch('/api/categories')
@@ -94,6 +103,14 @@ export default function Storefront() {
           onSelect={setCategoryId}
           productsCount={allProducts.length}
         />
+        {categoriesError && (
+          <div className="container mx-auto flex items-center justify-center gap-3 px-4 py-3 text-sm text-destructive">
+            <span>تعذّر تحميل الأصناف.</span>
+            <Button variant="outline" size="sm" onClick={() => refetchCategories()}>
+              إعادة المحاولة
+            </Button>
+          </div>
+        )}
 
         {/* Featured products */}
         {featuredProducts.length > 0 && (
@@ -210,6 +227,8 @@ export default function Storefront() {
             <div className="mb-4 text-sm text-muted-foreground">
               {loadingProducts
                 ? 'جاري تحميل المنتجات...'
+                : productsError
+                  ? 'تعذّر تحميل المنتجات'
                 : `${filteredProducts.length} منتج في "${activeCategoryName}"`}
             </div>
 
@@ -229,6 +248,16 @@ export default function Storefront() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : productsError ? (
+              <div className="text-center py-16">
+                <h3 className="text-lg font-semibold mb-2">تعذّر تحميل المنتجات</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  حدث خطأ أثناء الاتصال بالخادم. حاول مرة أخرى.
+                </p>
+                <Button variant="outline" onClick={() => refetchProducts()}>
+                  إعادة المحاولة
+                </Button>
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-16">

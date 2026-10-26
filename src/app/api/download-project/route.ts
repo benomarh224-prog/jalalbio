@@ -136,7 +136,7 @@ export async function GET() {
     archive.on('data', (chunk: Buffer) => chunks.push(chunk))
 
     const done = new Promise<void>((resolve, reject) => {
-      archive.on('end', resolve)
+      archive.on('end', () => resolve())
       archive.on('error', reject)
       archive.finalize()
     })

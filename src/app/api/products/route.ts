@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { catalogProducts } from '@/lib/catalog'
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,6 +8,17 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('categoryId')
     const featured = searchParams.get('featured')
     const search = searchParams.get('search')
+
+    if (!process.env.DATABASE_URL) {
+      const query = search?.toLocaleLowerCase() ?? ''
+      const products = catalogProducts.filter((product) =>
+        (!categoryId || categoryId === 'all' || product.categoryId === categoryId) &&
+        (featured !== 'true' || product.featured) &&
+        (!query || [product.name, product.nameAr, product.descriptionAr ?? '']
+          .some((value) => value.toLocaleLowerCase().includes(query)))
+      )
+      return NextResponse.json({ products })
+    }
 
     const where: Record<string, unknown> = {}
     if (categoryId && categoryId !== 'all') where.categoryId = categoryId

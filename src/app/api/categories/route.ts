@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { catalogCategories } from '@/lib/catalog'
 
 export async function GET() {
   try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ categories: catalogCategories })
+    }
+
     const categories = await db.category.findMany({
       orderBy: { name: 'asc' },
       include: { _count: { select: { products: true } } },
