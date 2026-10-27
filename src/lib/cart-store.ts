@@ -70,6 +70,13 @@ export const useCart = create<CartState>()(
       totalPrice: () =>
         get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     }),
-    { name: 'dar-tabiaa-cart' }
+    {
+      name: 'dar-tabiaa-cart',
+      partialize: ({ items }) => ({ items }),
+      merge: (saved, current) => {
+        const persisted = saved as Partial<CartState> | undefined
+        return { ...current, items: Array.isArray(persisted?.items) ? persisted.items : [] }
+      },
+    }
   )
 )

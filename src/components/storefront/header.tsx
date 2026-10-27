@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useTheme } from 'next-themes'
 import {
   Leaf,
@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCart } from '@/lib/cart-store'
+import { useMounted } from '@/hooks/use-mounted'
 
 const NAV_LINKS = [
   { label: 'الرئيسية', href: '#home' },
@@ -36,11 +37,18 @@ export function Header({
 }) {
   const { setTheme } = useTheme()
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const mounted = useMounted()
 
   const totalItems = useCart((s) =>
     s.items.reduce((sum, i) => sum + i.quantity, 0)
   )
   const toggleCart = useCart((s) => s.toggleCart)
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setMobileSearchOpen(false)
+    requestAnimationFrame(() => scrollToId('#products'))
+  }
 
   const toggleTheme = () => {
     const isDark =
@@ -50,15 +58,15 @@ export function Header({
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4">
+    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         {/* Logo */}
         <button
           onClick={() => scrollToId('#home')}
           className="flex items-center gap-2 shrink-0"
           aria-label="جلال بيو - الرئيسية"
         >
-          <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+          <span className="flex size-10 items-center justify-center rounded-2xl bg-[#244d37] text-[#e9cc8d] shadow-sm dark:bg-[#dfbd76] dark:text-[#233e29]">
             <Leaf className="size-5" />
           </span>
           <span className="text-base sm:text-lg font-bold text-foreground font-amiri">
@@ -82,23 +90,24 @@ export function Header({
         </nav>
 
         {/* Search - desktop */}
-        <div className="hidden md:flex relative flex-1 max-w-xs">
+        <form role="search" aria-label="البحث في المتجر" onSubmit={submitSearch} className="hidden md:flex relative flex-1 max-w-xs">
           <Search className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             value={search}
+            type="search"
             onChange={(e) => onSearch(e.target.value)}
             placeholder="ابحث عن منتج..."
-            className="pr-9"
+            className="h-10 rounded-full border-border/65 bg-muted/40 pr-9 text-sm shadow-none"
             aria-label="بحث"
           />
-        </div>
+        </form>
 
         {/* Actions */}
         <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden min-h-11 min-w-11"
+            className="md:hidden min-h-11 min-w-11 rounded-full"
             onClick={() => setMobileSearchOpen((v) => !v)}
             aria-label="بحث"
           >
@@ -108,7 +117,7 @@ export function Header({
           <Button
             variant="ghost"
             size="icon"
-            className="min-h-11 min-w-11"
+            className="min-h-11 min-w-11 rounded-full"
             onClick={toggleTheme}
             aria-label="تبديل المظهر"
           >
@@ -119,12 +128,12 @@ export function Header({
           <Button
             variant="ghost"
             size="icon"
-            className="relative min-h-11 min-w-11"
+            className="relative min-h-11 min-w-11 rounded-full"
             onClick={toggleCart}
             aria-label="سلة التسوق"
           >
             <ShoppingCart className="size-5" />
-            {totalItems > 0 && (
+            {mounted && totalItems > 0 && (
               <span className="absolute -top-0.5 -left-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold ring-2 ring-background">
                 {totalItems > 9 ? '9+' : totalItems}
               </span>
@@ -137,17 +146,20 @@ export function Header({
       {/* Mobile search */}
       {mobileSearchOpen && (
         <div className="md:hidden border-t border-border/60 p-3">
-          <div className="relative">
+          <form role="search" aria-label="البحث في المتجر على الهاتف" onSubmit={submitSearch} className="relative mx-auto max-w-xl">
             <Search className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               autoFocus
+              type="search"
+              enterKeyHint="search"
               value={search}
               onChange={(e) => onSearch(e.target.value)}
               placeholder="ابحث عن منتج..."
-              className="pr-9"
+              className="h-12 rounded-2xl bg-card pr-10 pl-24 text-sm"
               aria-label="بحث"
             />
-          </div>
+            <button type="submit" className="store-action absolute bottom-1 left-1 top-1 rounded-xl px-4 text-xs font-semibold">بحث</button>
+          </form>
         </div>
       )}
     </header>

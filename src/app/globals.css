@@ -206,3 +206,13 @@
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
+
+.store-action {
+  background: #244d37;
+  color: #fffaf0;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+.store-action:hover { background: #326448; }
+.store-action:focus-visible { outline: 2px solid #b88b3e; outline-offset: 3px; }
+.dark .store-action { background: #e4c380; color: #1b3524; }
+.dark .store-action:hover { background: #f0d49c; }

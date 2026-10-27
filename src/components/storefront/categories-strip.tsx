@@ -60,7 +60,7 @@ export function CategoriesStrip({
 
   return (
     <section id="categories" className="scroll-mt-20 py-6 md:py-10 border-b border-border/60">
-      <div className="container mx-auto px-4">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}

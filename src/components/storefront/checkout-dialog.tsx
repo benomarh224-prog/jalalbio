@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { useCart } from '@/lib/cart-store'
 import { toast } from 'sonner'
+import { formatPrice } from '@/lib/storefront-format'
 
 const MOROCCAN_PHONE = /^(\+?212|0)([5-7])\d{8}$/
 
@@ -117,10 +118,10 @@ export function CheckoutDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto custom-scroll">
+      <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto custom-scroll rounded-[26px] p-5 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <ShoppingCart className="size-5 text-primary" />
+          <DialogTitle className="flex items-center gap-3 text-xl">
+            <span className="grid size-10 place-items-center rounded-2xl bg-[#e9f0e3] text-[#315b3d] dark:bg-[#344431] dark:text-[#e3c98e]"><ShoppingCart className="size-5" /></span>
             إتمام الطلب
           </DialogTitle>
           <DialogDescription>
@@ -128,7 +129,7 @@ export function CheckoutDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 [&_input]:h-12 [&_input]:rounded-xl [&_input]:bg-muted/25 [&_textarea]:rounded-xl" noValidate>
           <div className="space-y-1.5">
             <Label htmlFor="customerName">الاسم الكامل *</Label>
             <Input
@@ -210,13 +211,13 @@ export function CheckoutDialog({
               <span className="font-medium">{itemCount}</span>
             </div>
             <div className="flex justify-between text-base items-baseline">
-              <span className="font-semibold">المجموع الإجمالي</span>
-              <span className="text-xl font-bold text-primary">
-                {subtotal} درهم
+              <span className="font-semibold">مجموع المنتجات</span>
+              <span className="text-xl font-bold text-[#2c5339] dark:text-[#e4c383]">
+                {formatPrice(subtotal)} درهم
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              💡 الدفع عند الاستلام متاح في جميع المدن المغربية
+              الدفع عند الاستلام. تفاصيل التوصيل تتأكد عند الاتصال بك.
             </p>
           </div>
 
@@ -226,14 +227,14 @@ export function CheckoutDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
-              className="min-h-10"
+              className="h-12 rounded-xl"
             >
               إلغاء
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting || items.length === 0}
-              className="min-h-10 flex-1"
+              className="store-action h-12 flex-1 rounded-xl"
             >
               {isSubmitting ? (
                 <>

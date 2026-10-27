@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator'
 import type { Product } from '@/lib/types'
 import { useCart } from '@/lib/cart-store'
 import { toast } from 'sonner'
+import { formatPrice } from '@/lib/storefront-format'
 
 export function ProductDetailDialog({
   product,
@@ -27,7 +28,7 @@ export function ProductDetailDialog({
   const open = !!product
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto custom-scroll">
+      <DialogContent className="sm:max-w-3xl max-h-[90dvh] overflow-y-auto custom-scroll rounded-[26px] p-0 gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>{product?.nameAr ?? 'تفاصيل المنتج'}</DialogTitle>
           <DialogDescription>{product?.descriptionAr ?? ''}</DialogDescription>
@@ -63,11 +64,12 @@ function ProductDetailContent({
   }
 
   const outOfStock = product.stock <= 0
+  const hasDiscount = product.oldPrice !== null && product.oldPrice > product.price
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="grid md:grid-cols-2">
       {/* Image */}
-      <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted/30">
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted/30 md:aspect-auto md:min-h-[430px]">
         <Image
           src={product.image}
           alt={product.nameAr}
@@ -75,10 +77,10 @@ function ProductDetailContent({
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover"
         />
-        {product.oldPrice && (
-          <span className="absolute top-3 right-3 bg-destructive text-white text-sm font-bold px-2.5 py-1 rounded-md shadow-sm">
+        {hasDiscount && (
+          <span className="absolute top-4 right-4 bg-[#f3d59a] text-[#47391e] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
             -{Math.round(
-              ((product.oldPrice - product.price) / product.oldPrice) * 100
+              ((product.oldPrice! - product.price) / product.oldPrice!) * 100
             )}
             %
           </span>
@@ -86,9 +88,10 @@ function ProductDetailContent({
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4 p-5 sm:p-6">
         <div>
-          <h2 className="text-2xl font-bold mb-2 font-amiri">
+          <p className="mb-1.5 text-xs font-medium text-muted-foreground">{product.category?.nameAr || 'من خيرات المغرب'}</p>
+          <h2 className="text-2xl font-bold mb-3 font-amiri">
             {product.nameAr}
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
@@ -113,13 +116,13 @@ function ProductDetailContent({
         </p>
 
         <div className="flex items-baseline gap-2 flex-wrap">
-          {product.oldPrice && (
+          {hasDiscount && (
             <span className="text-base text-muted-foreground line-through">
-              {product.oldPrice} درهم
+              {formatPrice(product.oldPrice!)} درهم
             </span>
           )}
-          <span className="text-3xl font-bold text-primary">
-            {product.price}
+          <span className="text-3xl font-bold text-[#2c5339] dark:text-[#e4c383]">
+            {formatPrice(product.price)}
           </span>
           <span className="text-sm text-muted-foreground">
             درهم / {product.unit}
@@ -134,7 +137,8 @@ function ProductDetailContent({
             <Button
               variant="outline"
               size="icon"
-              className="size-9"
+              className="size-11 rounded-xl"
+              disabled={qty <= 1}
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               aria-label="إنقاص"
             >
@@ -144,8 +148,9 @@ function ProductDetailContent({
             <Button
               variant="outline"
               size="icon"
-              className="size-9"
-              onClick={() => setQty((q) => q + 1)}
+              className="size-11 rounded-xl"
+              disabled={qty >= product.stock}
+              onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
               aria-label="زيادة"
             >
               <Plus className="size-4" />
@@ -166,12 +171,12 @@ function ProductDetailContent({
 
         <Button
           size="lg"
-          className="mt-2 min-h-11"
+          className="store-action mt-1 h-12 w-full rounded-xl"
           onClick={handleAdd}
           disabled={outOfStock}
         >
           <ShoppingCart className="size-4" />
-          أضف إلى السلة • {product.price * qty} درهم
+          أضف إلى السلة • {formatPrice(product.price * qty)} درهم
         </Button>
       </div>
     </div>

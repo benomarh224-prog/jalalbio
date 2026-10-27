@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Search, X, SlidersHorizontal, Star } from 'lucide-react'
+import { ArrowLeft, Search, X, SlidersHorizontal, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -24,6 +24,7 @@ import { Footer } from './footer'
 export default function Storefront() {
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState<string>('all')
+  const [sort, setSort] = useState('recommended')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
 
@@ -63,7 +64,7 @@ export default function Storefront() {
   // Filter products on client (search + category)
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return allProducts.filter((p) => {
+    const matches = allProducts.filter((p) => {
       const matchCat = categoryId === 'all' || p.categoryId === categoryId
       const matchSearch =
         !q ||
@@ -72,7 +73,11 @@ export default function Storefront() {
         (p.descriptionAr ?? '').toLowerCase().includes(q)
       return matchCat && matchSearch
     })
-  }, [allProducts, categoryId, search])
+    if (sort === 'price-asc') matches.sort((a, b) => a.price - b.price)
+    if (sort === 'price-desc') matches.sort((a, b) => b.price - a.price)
+    if (sort === 'newest') matches.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    return matches
+  }, [allProducts, categoryId, search, sort])
 
   const featuredProducts = useMemo(
     () => allProducts.filter((p) => p.featured).slice(0, 4),
@@ -90,7 +95,7 @@ export default function Storefront() {
 
       <Header
         search={search}
-        onSearch={setSearch}
+        onSearch={(value) => { setSearch(value); setCategoryId('all') }}
       />
 
       <main className="flex-1">
@@ -114,8 +119,8 @@ export default function Storefront() {
 
         {/* Featured products */}
         {featuredProducts.length > 0 && (
-          <section className="py-6 md:py-10 border-b border-border/60">
-            <div className="container mx-auto px-4">
+          <section className="border-b border-border/60 bg-[#eff3e9]/65 py-6 dark:bg-[#202c21]/35 md:py-10">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -125,8 +130,8 @@ export default function Storefront() {
               >
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Star className="size-5 fill-primary text-primary" />
-                    <span className="text-sm font-medium text-primary">
+                    <Star className="size-3.5 fill-[#b08b4a] text-[#b08b4a]" />
+                    <span className="text-[11px] font-semibold text-[#6d805b] dark:text-[#d0bc8b]">
                       مختارات جلال بيو
                     </span>
                   </div>
@@ -134,6 +139,7 @@ export default function Storefront() {
                     منتجات مميزة
                   </h2>
                 </div>
+                <a href="#products" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[#375d40] hover:underline dark:text-[#dfc78c]">عرض الكل <ArrowLeft size={15} /></a>
               </motion.div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
@@ -151,57 +157,69 @@ export default function Storefront() {
 
         {/* All products */}
         <section id="products" className="py-6 md:py-10 scroll-mt-20">
-          <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4 }}
-              className="mb-4 text-center md:mb-5"
+              className="mb-5 text-right md:mb-6"
             >
-              <h2 className="text-2xl md:text-3xl font-bold mb-2 font-amiri">
+              <p className="mb-1 text-[11px] font-semibold text-[#7b8f65] dark:text-[#c5b580]">من خيرات بلادنا</p>
+              <h2 className="text-2xl md:text-3xl font-bold mb-1 font-amiri">
                 كل المنتجات
               </h2>
-              <p className="text-sm md:text-base text-muted-foreground">
-                تصفح مجموعتنا الكاملة من المنتجات الطبيعية المغربية
+              <p className="text-xs leading-6 md:text-sm text-muted-foreground">
+                اختار منتجاتك المفضلة، والتوصيل حتى لباب دارك.
               </p>
             </motion.div>
 
             {/* Search bar + category filter chips */}
-            <div className="mb-5 space-y-3">
-              <div className="relative max-w-xl mx-auto">
-                <Search className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <div className="mb-4 space-y-4 rounded-[22px] border border-border/65 bg-card p-3 shadow-[0_10px_30px_-28px_#23432d99] sm:p-4">
+              <div className="grid gap-2.5 sm:grid-cols-[1fr_190px]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="ابحث عن منتج..."
-                  className="pr-9 h-11"
+                  className="h-12 rounded-xl border-border/60 bg-muted/35 pr-10 pl-11 text-sm shadow-none"
                   aria-label="بحث عن المنتجات"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch('')}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    type="button"
+                    className="absolute left-0 top-0 grid size-12 place-items-center text-muted-foreground hover:text-foreground"
                     aria-label="مسح البحث"
                   >
                     <X className="size-4" />
                   </button>
                 )}
               </div>
+              <select aria-label="ترتيب المنتجات" value={sort} onChange={(event) => setSort(event.target.value)} className="h-12 w-full rounded-xl border border-border/60 bg-muted/35 px-3 text-xs font-medium outline-none focus:border-primary sm:text-sm">
+                <option value="recommended">الترتيب المقترح</option>
+                <option value="price-asc">الثمن: من الأقل للأعلى</option>
+                <option value="price-desc">الثمن: من الأعلى للأقل</option>
+                <option value="newest">الأحدث أولاً</option>
+              </select>
+              </div>
 
               {/* Category chips */}
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground me-1">
+              <div role="group" aria-label="تصفية المنتجات حسب الصنف" className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground me-1">
                   <SlidersHorizontal className="size-3.5" />
                   <span>تصفية:</span>
                 </div>
                 <button
+                  type="button"
+                  aria-pressed={categoryId === 'all'}
                   onClick={() => setCategoryId('all')}
                   className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-8',
+                    'rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors min-h-9 sm:text-xs',
                     categoryId === 'all'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                      ? 'border-[#315a3e] bg-[#315a3e] text-white dark:border-[#ddbf80] dark:bg-[#ddbf80] dark:text-[#203a26]'
+                      : 'border-border/60 bg-transparent text-muted-foreground hover:border-primary/50 hover:text-foreground'
                   )}
                 >
                   الكل
@@ -209,12 +227,14 @@ export default function Storefront() {
                 {allCategories.map((c) => (
                   <button
                     key={c.id}
+                    type="button"
+                    aria-pressed={categoryId === c.id}
                     onClick={() => setCategoryId(c.id)}
                     className={cn(
-                      'px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-8',
+                      'rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors min-h-9 sm:text-xs',
                       categoryId === c.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                        ? 'border-[#315a3e] bg-[#315a3e] text-white dark:border-[#ddbf80] dark:bg-[#ddbf80] dark:text-[#203a26]'
+                        : 'border-border/60 bg-transparent text-muted-foreground hover:border-primary/50 hover:text-foreground'
                     )}
                   >
                     {c.nameAr}
@@ -224,12 +244,15 @@ export default function Storefront() {
             </div>
 
             {/* Results count */}
-            <div className="mb-4 text-sm text-muted-foreground">
+            <div className="mb-4 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span aria-live="polite">
               {loadingProducts
                 ? 'جاري تحميل المنتجات...'
                 : productsError
                   ? 'تعذّر تحميل المنتجات'
-                : `${filteredProducts.length} منتج في "${activeCategoryName}"`}
+                : `${filteredProducts.length} منتج · ${activeCategoryName}`}
+              </span>
+              {(search || categoryId !== 'all' || sort !== 'recommended') && <button type="button" onClick={() => { setSearch(''); setCategoryId('all'); setSort('recommended') }} className="inline-flex min-h-9 shrink-0 items-center gap-1 font-semibold text-[#56744e] hover:underline dark:text-[#d6bc84]"><X size={13} />مسح التصفية</button>}
             </div>
 
             {/* Grid */}
